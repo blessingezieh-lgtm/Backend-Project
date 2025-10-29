@@ -7,7 +7,7 @@ const authSchema = new mongoose.Schema({
         required:true,
         trim: true, 
         minLength :[4,"name must be at least 4 character"],
-        // maxLength :[30,"name must be at most 30 characters"],
+       
     },
     email:{
         type: String,
@@ -16,7 +16,7 @@ const authSchema = new mongoose.Schema({
         trim: true,
         lowercase:true, 
         minLength :[10,"Email must be at least 10character"],
-        // maxLength :[50,"Email must be at most 50 characters"],
+        
         match: [/\S+@\S+\.\S+/, "Email is invalid"],
     },
 
@@ -24,7 +24,7 @@ const authSchema = new mongoose.Schema({
         type: String,
         required:true,
         minLength :[5,"Password must be at least 5 character"],
-        // maxLength :[30,"Password must be at most 30 characters"],
+      
     },
     
     track:{

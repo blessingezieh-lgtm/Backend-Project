@@ -36,25 +36,57 @@ export const Signup = async (req, res, next) =>{
  
 //commit the transaction to mongoose
  await session.commitTransaction();
- session.endSession();
+
   
  return res.status(201).json({message:"User created successful",
-       user:{
-              userId: newUser[0]._id,
-              name: newUser[0].name,
-              email: newUser[0].email,
-              password: newUser[0].password,
-              track: newUser[0].track,
-              token:token
-       }
+      
  })
-} catch(error) {
-    await session.endSession()
+} catch(error){
+    await session.abortTransaction();
+    session.endSession()
     return res.status(500).json({message: "something is wrong", error: error.message})
   }
   } 
 
 
 export const Signin = async (req, res, next) =>{ 
-       res.send("SIGNIN ROUTE API")
-}
+    try{
+      const {email,password} = req.body;
+      // check if any data is missing
+      if(!email || !password){
+        return res.status(400).json({message:"All field are required"});
+      }
+      const User = await Auth.findOne({email});
+      if(!User){
+        return res.status(400).json({message:"User not found"});
+      }
+
+
+        const isPasswordVaild  = await bcrypt.compare(password, User.password);
+
+        if(!isPasswordVaild){
+          return res.status(400).json({message:"Invalid password"});
+        }
+
+        const token =jwt.sign({user:User.id},JWT_SECRET,{expiresIn:JWT_EXPIRES_IN})
+
+        res.status(200).json({
+          success: true,
+          message:"Signin successful",
+          token: token,
+          data: {
+            id: User.id,
+            name: User.name,
+            email: User.email,
+            track: User.track
+          },
+
+
+        })
+    } catch(error){
+      {next(error)
+
+      }
+      
+    }
+  }
