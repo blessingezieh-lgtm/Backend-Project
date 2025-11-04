@@ -35,7 +35,7 @@ export const Signup = async (req, res, next) =>{
       //create new user
  const newUser = await Auth.create([{name, email, password:hashpassword, track}],{session})
 //  generate token
- const token = jwt.sign({userId: newUser[0]._id, email: newUser[0]},JWT_SECRET,{expiresIn:JWT_EXPIRES_IN })
+ const token = jwt.sign({Id: newUser[0]._id, email: newUser[0].email},JWT_SECRET,{expiresIn:JWT_EXPIRES_IN })
  
 //commit the transaction to mongoose
  await session.commitTransaction();
@@ -76,7 +76,7 @@ export const Signin = async (req, res, next) =>{
           return res.status(400).json({message:"Invalid password"});
         }
 // generate a jwt token for authentication
-        const token =jwt.sign({user:User.id},JWT_SECRET,{expiresIn:JWT_EXPIRES_IN})
+        // const token =jwt.sign({id:User.id, email: User.email},JWT_SECRET,{expiresIn:JWT_EXPIRES_IN})
 
         // send a success response with user data and token
         res.status(200).json({

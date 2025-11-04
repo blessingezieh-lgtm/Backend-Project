@@ -7,13 +7,14 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import  dotenv from 'dotenv';
 import enrollRouter from "./routes/enroll.route.js";
+// import attendanceRouter from "./routes/attendance.route.js";
 
 
 dotenv.config();
 const app = express();
+//middleware
 app.use(cookieParser())
 app.use(express.json());
-
 app.use(cors({
   origin:"http://localhost:3000",
   Credential: false,
@@ -21,13 +22,15 @@ app.use(cors({
   allowedHeaders: ["content Type","Authorization"],  
   
 }))
+// to handle urlencoded data
 app.use(express.urlencoded({extended: true}))
 
-
+//routes middleware
 app.use('/api/v1/auth',authRouter);
 app.use("/api/v1", enrollRouter);
+// app.use('/api/attendance', attendanceRouter);
 
-
+//server
 app.listen(PORT, ()=>{
   connectDB();
   console.log(`server is running on port`);

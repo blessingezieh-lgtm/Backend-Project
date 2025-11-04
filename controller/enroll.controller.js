@@ -2,7 +2,42 @@ import mongoose from "mongoose";
 import Enroll from "../models/enroll.model.js";
 
 
+//Helpers function to get current da
+const isWeekend = () => {
+  const today =  Date();          // Get current date
+  const day = today.getDay();        // Sunday = 0, Monday = 1, ..., Saturday = 6
+  return day === 0 || day === 6;     // Returns true if it's Saturday or Sunday
+}
+
+
+// helpers function to start the day
+const getStartOfDay = (date) => {
+  const start = Date(date);
+  start.setHours =(0,0,0,0)
+  return start
+}
+//helper function to know end of the day
+const getEndOfDay = () => {
+  const end = Date(date)
+  end.setHours =(23,59,99,999)
+  return end
+}
+
+
+// helper function to get working days range(Mon - Fri)
+const getWoringDays =(startDate, EndDate) =>{
+  const workingDays = []
+  const current =new Date(startDate)
+  while(current <= EndDate){
+    if (!isWeekend(current)){
+      workingDays.push(new Date(current))
+    }
+    current,setDate(current.getDate() + 1)
+  }
+  return workingDays;
+}
 export const EnrollUser = async (req, res, next) => {
+
         const session = await mongoose.startSession();
         session.startTransaction();
     try{
@@ -42,6 +77,99 @@ export const EnrollUser = async (req, res, next) => {
    next(error);
   }
 };
+
+
+export const markAttendance = async (req,res,next)=>{
+  try {
+    const {email}= req.body;
+
+    if(!email){
+      return res.status(400).json({message: "Email required!"})
+    }
+
+    //Validation - check if student enrolled
+    const student = await Enroll.findOne({email});
+
+    if(!student){
+      return res.status(400).json({message: "Student not found!"})
+    }
+
+    const today = new Date()
+    console.log("Today's Date: ", today)
+
+    //check if today is weekend
+    if(isWeekend(today)){
+      return res.status(400).json({message: "Attendance cannot be marked on weekends!"})
+    }
+
+
+// prevent student from marking attendance twice in a day
+//this means startOfDay is 00.00 midnight
+//this means endOfDay is 11.59pm today
+//so we are creating a time range that represents today only
+
+    const startOfDay = getStartOfDay(today)
+    const endOfDay = getEndOfDay(today)
+    const alreadyMarked = student.attendance.some((record)=>{
+
+      const recordDate = new Date(record.date);
+      return recordDate >= startOfDay && recordDate <= endOfDay;
+
+      
+    })
+
+    if (alreadyMarked){
+      return res.status(400).json({Message: "Attendance already marked!"})
+    }
+
+    //Mark the student present
+    student.attendance.push({
+      date: today,
+      status: "present"
+    })
+
+    //save it
+    await student.save();
+
+    return res.status(200).json({
+      message: "Attendance marked successfully!",
+    })
+
+   
+  }catch (error) {
+    return res.status(500).json({
+      message: "Something went wrong", 
+      error: error.message
+    })
+  }
+}
+
+
+
+export const autoMarkabsence = async (req,res,next)=>{
+
+}
+
+export const getOverallAttendance = async (req,res,next)=>{
+
+}
+
+export const getAllStudentWithAttendance = async (req,res,next)=>{
+
+}
+
+export const getStudentAttendance = async (req,res,next)=>{
+  
+}
+
+
+
+
+
+
+
+
+
 
 
 

@@ -1,5 +1,22 @@
 import mongoose from "mongoose";
 
+const attendanceSchema = new mongoose.Schema({
+    date: {
+        type: Date,
+        required: true,
+    },
+    status: {   
+        type: String,
+        enum: ["present", "absent"],
+       required: true,
+    },
+
+    },
+
+   {
+    _id: false
+   }
+)
 
 const enrollSchema = new mongoose.Schema({
    firstname:{
@@ -31,7 +48,7 @@ const enrollSchema = new mongoose.Schema({
           required:true,
           unique: true,
           trim: true,
-          minLength :[11,"Password must be at least 5 character"],
+          minlength :[11,"Password must be at least 5 character"],
           match:[/^\+?[1-9]\d{1,14}$/,"phone number is invalid"],
       },
 
@@ -52,18 +69,23 @@ const enrollSchema = new mongoose.Schema({
             "Backend Development",
            "Fullstack Development",
            "Cloud Computing",
-           "Cybersecurity",
+           "Cyber Security",
            "Data Analytics"
     ],
        required: [true,"Tracks is required"],
     },
 
+    attendance: {
+    type: [attendanceSchema],
+    default: [],
+  },
 },
+
  {timestamps: true,}
 
 
   );
   
   
-  const Enroll = mongoose.model("Enroll", enrollSchema)
+   const Enroll = mongoose.model("Enroll", enrollSchema)
   export default Enroll;
