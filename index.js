@@ -7,8 +7,9 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import  dotenv from 'dotenv';
 import enrollRouter from "./routes/enroll.route.js";
-// import attendanceRouter from "./routes/attendance.route.js";
-
+import attendanceRouter from "./routes/enroll.route.js";
+import cron from "node-cron";
+import { autoMarkabsence } from './controller/enroll.controller.js';  
 
 dotenv.config();
 const app = express();
@@ -25,10 +26,16 @@ app.use(cors({
 // to handle urlencoded data
 app.use(express.urlencoded({extended: true}))
 
+cron.schedule('* * * * * ' , async () => {
+  console.log ("Testing Auto marking function")
+  await autoMarkabsence(null, null)
+})
+
 //routes middleware
 app.use('/api/v1/auth',authRouter);
 app.use("/api/v1", enrollRouter);
-// app.use('/api/attendance', attendanceRouter);
+app.use('/api/attendance', attendanceRouter);
+
 
 //server
 app.listen(PORT, ()=>{

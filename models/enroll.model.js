@@ -1,3 +1,4 @@
+import { parse } from "dotenv";
 import mongoose from "mongoose";
 
 const attendanceSchema = new mongoose.Schema({
@@ -86,6 +87,49 @@ const enrollSchema = new mongoose.Schema({
 
   );
   
+//help to search faster using index
+enrollSchema.index({ email: 1 });
+enrollSchema.index({"attendance.date": 1 });
+
+// combines firtsName and lastName together to search faster using fullname
+enrollSchema.virtual("fullname").get (function(){
+    return `${this .firstname}${lastname}`
+})
   
+enrollSchema.methods.getAttendancePercentage = function(){
+    //step 1: check if student has any attendance record!
+    if (this.attendance.length === 0) return 0;
+
+    // step 2: count how many times they were present
+    const presentCount = this.attendance.filter(record => record.status === "present").length;
+
+    // step 3: calculate percentage
+    // formula: (number of presents/ total number of attendance records) * 100
+    retrun ((presentCount / this.attendance.length) * 100).toFixed (2);
+     
+}    
+
+
+//method to get attendance by date range
+enrollSchema.methods.getAttendanceByDateRange = function(startDate, endDate){
+    return this.attendance.filter((record)=>{
+       const recordDate = new Date(record.date);
+       return recordDate >= startDate && recordDate <= endDate;
+});
+
+};
+
+enrollSchema.statics.findLowAttendanceStudents = async function(threshold = 75){
+    //step 1: get all students from databas
+    const students = await this.find();
+
+    // step 2: filter students with attendance below threshold
+    return students.filter((student )=>{
+        const percentage =  student.getAttendancePercentage();
+       return parseFloat(percentage) < threshold;
+    });
+}
+
+
    const Enroll = mongoose.model("Enroll", enrollSchema)
   export default Enroll;

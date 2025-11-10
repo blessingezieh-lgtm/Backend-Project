@@ -1,12 +1,16 @@
 import { Router } from "express";
 import express from "express";
-import { EnrollUser } from "../controller/enroll.controller.js";
-
+import {EnrollUser,markAttendance} from "../controller/enroll.controller.js";
+// import { markAttendance} from "../controller/enroll.controller.js";
 const enrollRouter = Router();
 
 enrollRouter.post('/enroll', EnrollUser);
 
-// const router = express.Router();
+enrollRouter.post('/attendance', markAttendance);
+
+const attendanceRouter = express.Router();
+
+attendanceRouter.post('/attendance', markAttendance);
 
 
 
