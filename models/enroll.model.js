@@ -105,7 +105,7 @@ enrollSchema.methods.getAttendancePercentage = function(){
 
     // step 3: calculate percentage
     // formula: (number of presents/ total number of attendance records) * 100
-    retrun ((presentCount / this.attendance.length) * 100).toFixed (2);
+    return ((presentCount / this.attendance.length) * 100).toFixed (2);
      
 }    
 

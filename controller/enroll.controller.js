@@ -13,13 +13,13 @@ const isWeekend = (date) => {
 // helpers function to start the day
 const getStartOfDay = (date) => {
   const start = new Date(date);
-  start.setHours =(0,0,0,0)
+  start.setHours (0,0,0,0)
   return start
 }
 //helper function to know end of the day
 const getEndOfDay = (date) => {
   const end = new Date(date)
-  end.setHours =(13,59,99,999)
+  end.setHours =(23,59,99,999)
   return end
 }
 
@@ -32,7 +32,7 @@ const getWoringDays =(startDate, EndDate) =>{
     if (!isWeekend(current)){
       workingDays.push(new Date(current))
     }
-    current,setDate(current.getDate() + 1)
+    current.setDate(current.getDate() + 1)
   }
   return workingDays;
 }
@@ -107,10 +107,17 @@ export const markAttendance = async (req,res,next)=>{
 
    const startOfDay = getStartOfDay(today)
    const endOfDay = getEndOfDay(today)
+  //  if(today < startOfDay) {
+  //   return res.status(400).json({message:"The hasnt started"})
+  //  }
+
+  //  if(today > endOfDay) {
+  //   res.status(400).json({message:"The day has ended"})
+  //  }
    const alreadyMarked = student.attendance.some((record)=>{
 
          const recordDate = new Date(record.date);
-         return recordDate >= startOfDay &&recordDate <=endOfDay;
+         return recordDate >= startOfDay && recordDate <= endOfDay;
    })
 
    if (alreadyMarked){
@@ -139,9 +146,8 @@ export const markAttendance = async (req,res,next)=>{
   }
 }
 
-
-
 export const autoMarkabsence = async (req,res,next)=>{
+
     try {
         // THis helpd to get to get 
         const today = new Date()
@@ -196,17 +202,123 @@ export const autoMarkabsence = async (req,res,next)=>{
     }
 }
 
-export const getOverallAttendance = async (req,res,next)=>{
+export const getOverallAttendance = async (req, res, next) => {
+  try {
+    const students = await Enroll.find({});
+    if (students.length === 0) {
+      return res.status(404).json({ message: "No students found" });
+    }
+    let totalPresent = 0;
+    let totalAbsent = 0;
 
-}
+    const summaries = [];
 
+    students.forEach((student) => {
+      const presentDays = student.attendance.filter(
+        (b) => b.status === "present"
+      ).length;
+      const absentDays = student.attendance.filter(
+        (b) => b.status === "absent"
+      ).length;
+      const totalDays = presentDays + absentDays;
 
+      const percentage = totalDays === 0 ? 0 : (presentDays / totalDays) * 100;
 
+      totalPresent += presentDays;
+      totalAbsent += absentDays;
 
+      summaries.push({
+        name: `${student.firstname} ${student.lastname}`,
+        email: student.email,
+        present :presentDays,
+        absent :absentDays,
+        percentage,
+      });
+    });
 
+    const best = summaries.reduce((max, s) =>
+      s.percentage > max.percentage ? s : max
+    );
 
+    const worst = summaries.reduce((min, s) =>
+      s.percentage < min.percentage ? s : min
+    );
 
+    const averageAttendance =
+      summaries.reduce((sum, s) => sum + s.percentage, 0) / summaries.length;
 
+    return res.status(200).json({
+      totalPresent,
+      totalAbsent,
+      averageAttendance,
+      bestStudent: best,
+      worstStudent: worst,
+      allAttendance: summaries,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
 
+export const getAllStudentsWithAttendance = async (req, res, next) => {
+  console.log("fetching all students");
 
+  try {
+    const students = await Enroll.find({});
 
+    const result = students.map((student) => {
+      const presentDays = student.attendance.filter(
+        (a) => a.status === "present"
+      ).length;
+      const absentDays = student.attendance.filter(
+        (a) => a.status === "absent"
+      ).length;
+      const totalDays = presentDays + absentDays;
+
+      return {
+        name: `${student.firstname} ${student.lastname}`,
+        email: student.email,
+        presentDays,
+        absentDays,
+        percentage: student.getAttendancePercentage(),
+      };
+    });
+    return res.status(200).json(result);
+  } catch (error) {
+    console.log("error in this route", error.message);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+export const getStudentAttendance = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const student = await Enroll.findOne({ _id: id });
+
+    if (!student) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+    const totalPresent = student.attendance.filter(
+      (b) => b.status === "present"
+    ).length; 
+    const totalAbsent = student.attendance.filter(
+      (b) => b.status === "absent"
+    ).length;
+
+    const totalDays = totalPresent + totalAbsent;
+    const percentage =
+      totalDays === 0 ? 0 : ((totalPresent / totalDays) * 100).toFixed(2);
+
+    return res.status(200).json({
+      name: `${student.firstname} ${student.lastname}`,
+      email: student.email,
+      presentDays: totalPresent,
+      absentDays: totalAbsent,
+      percentage,
+      attendanceHistory: student.attendance,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
