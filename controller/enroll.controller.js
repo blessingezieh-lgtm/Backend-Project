@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import Enroll from "../models/enroll.model.js";
+import e from "express";
 
 
 //Helpers function to get current da
@@ -202,6 +203,69 @@ export const autoMarkabsence = async (req,res,next)=>{
     }
 }
 
+
+  export const getAttendanceByDateRange = async (req, res, next) => {
+    try {
+  const {start, end} = req.query
+
+  if(!start || !end){
+    return res.status(400).json ({
+      message:"start date and end date are required"
+    })
+  }
+
+  const startDate = new Date (start)
+  const endDate = new Date (end)
+  endDate.setDate(23,59,59,999) 
+
+
+  if (isNaN(startDate) || isNaN(endDate)){
+    return res.status(400).json({
+      message: "Not a valid date"
+    })
+  }
+ const students = await Enroll.find({},{
+  firstname: 1,
+  lastname: 1,
+  email: 1,
+  gender: 1,
+  track: 1,
+  attendance: 1,
+
+ })
+const findStudents = students.map(student =>{
+  const filteredStudents = student.attendance.filter(record =>{
+    const recordDate = new Date(record.date);
+     return recordDate >= startDate && recordDate <= endDate;
+  })
+
+  if(filteredStudents.length > 0){
+     return {
+        name: `${student.firstname} ${student.lastname}`,
+        email: student.email,
+       gender: student.gender,
+       track: student.track,
+       attendanceCount: filteredStudents.length,
+      };
+  }
+
+  return null
+}).filter(Boolean)
+
+return res.status(200).json({
+  message: "successful",
+  attendanceCount: findStudents.length,
+  data: findStudents,
+})
+ } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: "Server error",
+      error: error.message,
+    });
+  }
+  }
+
 export const getOverallAttendance = async (req, res, next) => {
   try {
     const students = await Enroll.find({});
@@ -244,7 +308,8 @@ export const getOverallAttendance = async (req, res, next) => {
       s.percentage < min.percentage ? s : min
     );
 
-    const averageAttendance =
+    const averageAttendance
+     =
       summaries.reduce((sum, s) => sum + s.percentage, 0) / summaries.length;
 
     return res.status(200).json({
@@ -322,3 +387,35 @@ export const getStudentAttendance = async (req, res, next) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
+export const getAttendanceByTrack = async (req, res, next) => {
+  try {
+    const { track } = req.params; 
+    const students = await Enroll.find({ learningtrack: track });
+
+    if (students.length === 0) {  
+      return res.status(404).json({ message: "No students found for this track" });
+    }
+    const result = students.map((student) => {
+      const presentDays = student.attendance.filter(
+        (a) => a.status === "present" 
+      ).length;
+      const absentDays = student.attendance.filter(
+        (a) => a.status === "absent" 
+      ).length;
+      const totalDays = presentDays + absentDays;
+      return {  
+        name: `${student.firstname} ${student.lastname}`,
+        email: student.email,
+        presentDays,
+        absentDays,
+        percentage: student.getAttendancePercentage(),
+      };
+    });
+    return res.status(200).json(result);
+  } catch (error) {
+    console.log("error in this route", error.message);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }   
+};
+
