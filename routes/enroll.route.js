@@ -25,7 +25,7 @@ enrollRouter.post("/absent", autoMarkabsence);
 enrollRouter.get("/att/all", getAllStudentsWithAttendance);
 enrollRouter.get("/att/overall", getOverallAttendance);
 enrollRouter.get("/att/filter", getAttendanceByDateRange);
-enrollRouter.get("/att/:track",getAttendanceByTrack);
+enrollRouter.get("/att/track/:track",getAttendanceByTrack);
 // enrollRouter.get("/att/:name",getAttendanceByName);
 // This is for a student’s personal attendance i.e a particular student
 enrollRouter.get("/att/:id", getStudentAttendance);
