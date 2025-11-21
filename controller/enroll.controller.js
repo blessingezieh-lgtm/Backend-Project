@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import Enroll from "../models/enroll.model.js";
-import e from "express";
+import express from "express";
 
 
 //Helpers function to get current da

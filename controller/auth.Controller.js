@@ -3,6 +3,8 @@ import Auth from "../models/auth.models.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import {JWT_EXPIRES_IN ,JWT_SECRET } from "../config/env.js";
+import { adminAuth } from "../middlewares/admin.auth.js"; 
+
 
 
 //signup controller function
@@ -35,7 +37,7 @@ export const Signup = async (req, res, next) =>{
       //create new user
  const newUser = await Auth.create([{name, email, password:hashpassword, track}],{session})
 //  generate token
- const token = jwt.sign({Id: newUser[0]._id, email: newUser[0].email},JWT_SECRET,{expiresIn:JWT_EXPIRES_IN })
+ const token = jwt.sign({Id: newUser[0]._id, email: newUser[0].email,name:newUser[0].name,isAdmin: newUser[0].isAdmin},JWT_SECRET,{expiresIn:JWT_EXPIRES_IN });
  
 //commit the transaction to mongoose
  await session.commitTransaction();
@@ -76,7 +78,11 @@ export const Signin = async (req, res, next) =>{
           return res.status(400).json({message:"Invalid password"});
         }
 // generate a jwt token for authentication
-        // const token =jwt.sign({id:User.id, email: User.email},JWT_SECRET,{expiresIn:JWT_EXPIRES_IN})
+        const token =jwt.sign(
+          {id:User.id, email: User.email,
+            name: User.name,
+            isAdmin: User.isAdmin}
+            ,JWT_SECRET,{expiresIn:JWT_EXPIRES_IN})
 
         // send a success response with user data and token
         res.status(200).json({
@@ -98,3 +104,11 @@ export const Signin = async (req, res, next) =>{
 
     }
   }
+
+  export const adminonly = [  
+    adminAuth,
+    (req, res) => {
+        res.status(200).json({ message: "Welcome to the admin dashboard!" });
+    }
+];
+

@@ -38,6 +38,10 @@ const authSchema = new mongoose.Schema({
     ],
        required: [true,"Tracks is required"],
     },
+    isAdmin:{
+        type: Boolean,
+        default: false,
+    },
 },
    {Timestamps: true,}
 
